@@ -1,0 +1,179 @@
+[[setup]]
+== Git configuration
+
+[[setup_configurationlevels]]
+=== Git configuration levels
+
+The `git config` command allows you to configure your Git settings.
+These settings can be system wide, user or repository specific.
+
+A more specific setting overwrites values in the previous level.
+A setting for the repository overrides the user setting and a user setting overrides a system wide setting.
+
+[[setup_systemwideconfiguration]]
+
+==== Git system-wide configuration 
+(((System wide Git configuration))) 
+(((Configuration, System wide configuration)))
+You can provide a system wide configuration for your Git settings. 
+A system wide configuration is not very common.
+Most settings are user specific or repository specific as described in the next chapters.
+
+On a Unix based system, Git uses the `/etc/gitconfig` file for this system-wide configuration. 
+To set this up, ensure you have sufficient rights, i.e. root rights, in your OS and use the `--system` option for the `git config` command.
+
+[[setup_userconfiguration]]
+==== Git user configuration 
+(((Configuration, User specific configuration))) 
+(((User specific Git configuration )))
+Git allows you to store user settings in the `.gitconfig` file located in the user home directory. 
+This is also called the _global_ Git configuration.
+
+For example Git stores the committer and author of a change in each commit. 
+This and additional information can be stored in the Git user settings.
+
+In each Git repository you can also configure the settings for this repository. 
+User configuration is done if you include the `--global` option in the `git config` command.
+
+[[setup_configuration]]
+==== Repository specific configuration 
+(((Configuration, repository specific configuration))) 
+(((Repository specific Git configuration )))
+You can also store repository specific settings in the `.git/config` file of a repository.
+Use the `--local` or use no flag at all. 
+If neither the `--system` not the `--global` parameter is used, the setting is specific for the current Git repository.
+
+[[gitsetup_user]]
+=== User credential configuration
+(((Configuration, user and email)))
+You have to configure at least your user and email address to be able to commit to a Git repository because this information is stored in each commit.
+
+[source,console]
+----
+# configure the user which will be used by Git
+# this should be not an acronym but your full name
+git config --global user.name "Firstname Lastname"
+
+# configure the email address
+git config --global user.email "your.email@example.org"
+---- 
+
+[[gitsetup_pushconfiguration]]
+=== Push configuration
+(((Configuration, push configuration)))
+If your are using Git in a version below 2.0 you should also execute the following command.
+
+[source,console]
+----
+include::res/commandline/setup_pushmatching.txt[]
+----
+
+This configures Git so that the `git push` command pushes only the active branch to your Git remote repository. 
+As of Git version 2.0 this is the default and therefore it is good practice to configure this behavior.
+
+You learn about the push command in <<cloneremotes_push>>.
+
+[[autosetuprebase]]
+=== Avoid merge commits for pulling
+(((Configuration, autosetuprebase)))
+(((autosetuprebase)))
+By default, Git runs the `git fetch`  followed by the `git merge` command if you use the `git pull` command. 
+You can configure git to use `git rebase` instead of `git merge` for the pull command via the following setting.
+
+[source,console]
+----
+# set default so that you avoid unnecessary commits
+git config --global branch.autosetuprebase always
+---- 
+
+[NOTE]
+====
+This setting helps avoiding merge commits during the pull operation which synchronizes your Git repository with a remote repository.
+The author of this {contentidentifier} always uses this setting for his Git repositories.
+====
+
+=== Allow rebasing with uncommited changes
+
+If you want Git to automatically save your uncommited changes before a rebase you can activate autoStash.
+After the rebase is done your changes will get reapplied.
+For an explanation of `git stash` please see <<stash_usage>>.
+
+[source, console]
+----
+include::res/commandline/gitconfig_rebase_autoStash[]
+----
+
+[NOTE]
+====
+Before Git v2.6 `git pull --rebase` didn't respected this setting.
+====
+
+[[setup_highlighting]]
+
+=== Color Highlighting
+(((Configuration, color highlighting)))
+The following commands enables color highlighting for Git in the console.
+
+[source,console]
+----
+include::res/highlight/color.txt[]
+----
+ 
+[[setup_editor]]
+=== Setting the default editor
+(((Configuration, default editor)))
+By default Git uses the system default editor which
+is taken from the _VISUAL_ or _EDITOR_ environment variables if set. You
+can configure a different one via the following setting.
+
+[source,console]
+----
+include::res/settings/editor.txt[]
+----
+ 
+[[setup_mergetool]]
+=== Setting the default merge tool
+(((Configuration, default merge tool)))
+File conflicts might occur in Git during an
+operation which combines different versions of the same files. In this
+case the user can directly edit the file to resolve the conflict.
+
+Git allows also to configure a merge tool for solving these conflicts.
+You have to use third party visual merge tools like tortoisemerge,
+p4merge, kdiff3 etc. A Google search for these tools help you to install
+them on your platform. Keep in mind that such tools are not required,
+you can always edit the files directly in a text editor.
+
+Once you have installed them you can set your selected tool as default
+merge tool with the following command.
+
+[source,console]
+----
+include::res/settings/mergetool.txt[] 
+----
+
+[[setup_allsetttings]]
+=== More settings
+
+All possible Git settings are described under the following link:
+https://www.kernel.org/pub/software/scm/git/docs/git-config.html[git-config
+manual page]
+
+[[setup_seesettings]]
+=== Query Git settings
+(((Configuration, query existing configuration)))
+To query your Git settings, execute the following command:
+
+[source,console]
+----
+include::res/settings/listsettings.txt[]
+---- 
+
+If you want to query the global settings you can use the following
+command.
+
+[source,console]
+----
+include::res/settings/listsettingsglobal.txt[] 
+----
+

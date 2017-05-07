@@ -1,0 +1,68 @@
+== Working with patch files
+
+[[gitpatch]]
+=== What is a patch file?
+(((Patch)))
+A _patch_ is a text file that contains changes to other text files in a standarized format.
+A patch created with the `git format-patch` command includes meta-information about the commit
+(committer, date, commit message, etc) and also contains the changes introduced in binary data in the commit.
+
+This file can be sent to someone else and the receiver can use it to apply the changes to his local repository. 
+The metadata is preserved.
+
+Alternatively you could create a diff file with the `git diff` command, but this diff file does not contain the metadata information.
+
+
+
+
+[[gitpatch_createandapply]]
+=== Create and apply patches
+(((Create patch)))
+(((git format-patch)))
+The following example creates a branch, changes several files and creates a commit recording these changes.
+
+[source,console]
+----
+include::res/patch/patch1.txt[]
+----
+ The
+next example creates a patch for these changes.
+
+[source,console]
+----
+include::res/patch/patch2.txt[]
+----
+
+To apply this patch to your master branch in a different clone of the repository, switch to it and use the `git apply` command.
+
+[source,console]
+----
+include::res/patch/patch3.txt[]
+----
+
+Afterwards you can commit the changes introduced by the patches and delete the patch file.
+
+[source,console]
+----
+include::res/patch/patch4.txt[]
+----
+
+[TIP]
+====
+Use the `git am` command to apply and commit the changes in a single step. 
+To apply and commit all patch files in the directory use, for example, the `git am *.patch` command. You specify the order in
+which the patches are applied by specifying them on the command line.
+====
+
+[[gitpatch_createforcommit]]
+=== Create a patch for a selected commit
+
+You can specify the commit ID and the number of patches which should be
+created. For example, to create a patch for selected commits based on
+the HEAD pointer you can use the following commands.
+
+[source,console]
+----
+include::res/patch/patch5.txt[]
+----
+

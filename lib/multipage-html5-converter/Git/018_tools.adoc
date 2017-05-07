@@ -1,0 +1,57 @@
+[[git_tooling]]
+== Git tooling
+
+[[git_tools_commmandline]]
+=== The Git command line tools
+
+The core Git development team provides tooling for the command line via the the `git` command. 
+Without any arguments, this command lists its options and the most common commands. 
+You can get help for a certain Git command via the help command online option followed by the command. 
+
+----
+git help [command to get help for]
+----
+
+See all possible commands, use the `git help --all` command.
+
+Git supports for several commands a short and a long version, similar to other Unix commands.
+The short version uses a single hyphen and the long version uses two hyphen. 
+The following two commands are equivalent.
+
+----
+git commit -m "This is a message"
+
+git commit --message "This is a message"
+----
+
+[[git_tools_commandline_doublehyphens]]
+
+=== Separating parameters and file arguments in Git commands
+
+(((Separating files and parameter arguments in Git)))
+(((Double hyphen (--) usage in Git)))
+The double hyphens (--) in Git separates out any references or other options from a path (usually file names). 
+For example, HEAD has a special meaning in Git. 
+Using double hyphens allows you to distinguish between looking at a file called HEAD from a Git commit reference called HEAD.
+
+In case Git can determine the correct parameters and options automatically the double hyphens can be avoided.
+
+[source,console]
+----
+# seeing the git log for the HEAD file
+git log -- HEAD
+
+# seeing the git log for the HEAD reference
+git log HEAD --
+
+# if there is no HEAD file you can use HEAD as commit reference
+git log HEAD
+---- 
+
+=== Graphical tools for Git
+
+You can also use graphical tools. 
+For example, the https://www.eclipse.org/downloads/[Eclipse IDE] provides excellent support for working with Git repositories.
+
+See http://git-scm.com/downloads/guis[GUI Clients] for an overview of the available tools
+

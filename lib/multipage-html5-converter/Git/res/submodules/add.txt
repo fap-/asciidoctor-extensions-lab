@@ -1,0 +1,2 @@
+git submodule add [URL to Git repo] #<1>
+git submodule init #<2>

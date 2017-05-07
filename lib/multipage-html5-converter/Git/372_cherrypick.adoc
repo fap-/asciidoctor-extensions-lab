@@ -1,0 +1,64 @@
+== Using the Git cherry-pick command
+
+[[cherrypick_definition]]
+=== Applying a single commit with cherry-pick
+(((git cherry-pick)))
+The `git cherry-pick` command allows you to select the patch which was introduced with an individual commit and apply this patch on another branch. 
+The patch is captured as a new commit on the other branch.
+
+This way you can select individual changes from one branch and transfer them to another branch.
+
+[NOTE]
+====
+The new commit does not point back to its original commit so do not use cherry-pick blindly since you may end up with several copies of the same change. 
+Most often cherry-pick is either used locally (to emulate an interactive rebase) or to port individual bug fixes done on a development branch into maintenance branches.
+====
+
+
+
+[[cherrypick_example]]
+=== Example: Using cherry-pick
+
+In the following example you create a new branch and commit two changes.
+
+[source,console]
+----
+include::res/cherry/step1.txt[]
+----
+
+You can check the commit history, for example, with the `git log --oneline` command.
+
+[source,console]
+----
+include::res/cherry/step2.txt[]
+----
+
+The following command selects the first commit based on the commit ID and applies its changes to the master branch. 
+This creates a new commit on the master branch.
+
+[source,console]
+----
+include::res/cherry/step3.txt[]
+----
+
+The `cherry-pick` command can be used to change the order of commits. 
+`git cherry-pick` also accepts commit ranges for example in the following command.
+
+[source,console]
+----
+include::res/cherry/step4.txt[]
+----
+
+[[TIP]]
+====
+See <<commitreference_ranges_doubledot>> for more information about commit ranges.
+====
+
+If things go wrong or you change your mind, you can always reset to the
+previous state using the following command.
+
+[source,console]
+----
+include::res/cherry/step5.txt[]
+----
+

@@ -1,0 +1,22 @@
+[[exercise_gitsetup]]
+== Exercise - Setting up Git
+
+In this exercise you configure your user and email which is a required setup for Git. 
+You also configure Git to use _rebase_ during a pull operation which is also a common setting for Git.
+
+Configure your user and email for Git via the following command.
+
+[source,console]
+----
+# configure the user which will be used by Git
+# this should be not an acronym but your full name
+git config --global user.name "Firstname Lastname"
+
+# configure the email address
+git config --global user.email "your.email@example.org"
+
+# use rebase instead of merge in the `git pull` command.
+# this avoids merge commits during the pull operation
+git config --global branch.autosetuprebase always
+---- 
+
