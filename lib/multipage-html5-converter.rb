@@ -18,12 +18,14 @@ class MultipageHtml5Converter
 
   register_for 'multipage_html5'
 
+  attr_reader :section_documents
+
   EOL = "\n"
 
   def initialize backend, opts
     super
     basebackend 'html'
-    @documents = []
+    @section_documents = []
   end
 
   # calls the respective transform method for the specific node type (node_name)
@@ -43,7 +45,7 @@ class MultipageHtml5Converter
     master_content << (node.attr 'author') if node.attr? 'author'
     master_content << ''
     # article top navigation / TOC
-    @documents.each do |doc|
+    @section_documents.each do |doc|
       sect = doc.blocks[0]
       sectnum = sect.numbered && !sect.caption ? %(#{sect.sectnum} ) : nil
       master_content << %(* <<#{doc.attr 'docname'}#,#{sectnum}#{sect.captioned_title}>>)
@@ -66,16 +68,17 @@ class MultipageHtml5Converter
     #node.blocks.each {|b| b.parent = node }
     reparent node, page
 
-    # NOTE don't use << on page since it changes section number
-    binding .pry
+#    binding .pry
     # last is a paragraph, so we are adding a block as line but here only inline passthrough works
     # better add a new block instead a new line
     # shouldn't this added to the document anyway?
     # TODO(fap): find out how/where the general document html layout is done
     last = node.blocks.last
     (last.lines << "\n++++\n<a href=\"./next.html\">next</a>\n++++") if last.respond_to? :lines
+
+    # NOTE don't use << on page since it changes section number
     page.blocks << node
-    @documents << page
+    @section_documents << page
     ''
   end
 
@@ -103,7 +106,7 @@ class MultipageHtml5Converter
 
   def write output, target
     outdir = ::File.dirname target
-    @documents.each do |doc|
+    @section_documents.each do |doc|
       outfile = ::File.join outdir, %(#{doc.attr 'docname'}.html)
       ::File.open(outfile, 'w') do |f|
         f.write doc.convert
@@ -114,4 +117,25 @@ class MultipageHtml5Converter
       f.write output
     end
   end
+end
+
+
+module DocumentExtension
+
+  def initialize data = nil, options = {}
+    super
+    @references[:id_origins] = {}
+  end
+
+  def register(type, value, force = false)
+    if type == :ids
+      id, origin = *value
+      @references[:id_origins][id] = origin
+    end
+    super
+  end
+end
+
+class Asciidoctor::Document
+  prepend DocumentExtension
 end
