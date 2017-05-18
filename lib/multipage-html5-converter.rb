@@ -54,6 +54,7 @@ class MultipageHtml5Converter
   end
 
   def section node
+    return if node.level > 1
     doc = node.document
     # make extra document / file for this section
     page = Asciidoctor::Document.new [],
@@ -65,8 +66,11 @@ class MultipageHtml5Converter
     page.set_attr 'docname', node.id
     # TODO recurse
     #node.parent = page
-    #node.blocks.each {|b| b.parent = node }
+    @html5_converter = page.converter unless @html5_converter
+
+    node.blocks.each {|b| b.convert }
     reparent node, page
+    # page.blocks.each {|b| b.convert }
 
 #    binding .pry
     # last is a paragraph, so we are adding a block as line but here only inline passthrough works
@@ -74,7 +78,7 @@ class MultipageHtml5Converter
     # shouldn't this added to the document anyway?
     # TODO(fap): find out how/where the general document html layout is done
     last = node.blocks.last
-    (last.lines << "\n++++\n<a href=\"./next.html\">next</a>\n++++") if last.respond_to? :lines
+    (last.lines << "\n+++\n<a href=\"./next.html\">next</a>\n+++") if last.respond_to? :lines
 
     # NOTE don't use << on page since it changes section number
     page.blocks << node
@@ -100,9 +104,14 @@ class MultipageHtml5Converter
     end
   end
 
-  # def paragraph node
-  #  puts 'here'
-  # end
+  def paragraph node
+#    binding.pry
+    node.lines = node.lines.map do |line|
+      # TODO(fap): give correct origin node from :refs
+      node.document.sub_inline_xrefs_for_chunked_output line, @html5_converter
+    end
+#    puts 'here'
+  end
 
   def write output, target
     outdir = ::File.dirname target
@@ -119,23 +128,159 @@ class MultipageHtml5Converter
   end
 end
 
+# module SectionExtension
+#   def
+#   end
+# end
+
+module ParserExtension
+
+  def initialize_section(reader, parent, attributes = {})
+    section = super reader, parent, attributes
+    section.document.register(:refs, [section.id, section])
+    section
+  end
+end
+
+Asciidoctor::Parser.singleton_class.prepend ParserExtension
+# class Asciidoctor::Parser
+#   prepend ParserExtension
+# end
 
 module DocumentExtension
 
   def initialize data = nil, options = {}
     super
-    @references[:id_origins] = {}
+    @references[:refs] = {}
   end
 
   def register(type, value, force = false)
-    if type == :ids
+    if type == :refs
       id, origin = *value
-      @references[:id_origins][id] = origin
+      @references[:refs][id] = origin
+    else
+      super type, value, force
     end
-    super
   end
 end
 
 class Asciidoctor::Document
   prepend DocumentExtension
+end
+
+module Asciidoctor::Substitutors
+  CC_WORD = Asciidoctor::CC_WORD
+  CC_ALL = Asciidoctor::CC_ALL
+  # TODO(FAP): fixes error in tests that don't use local asciidoc repo
+  RS = '\\'
+  XrefInlineMacroChunkedRx = %r(\\?(?:<<([#{CC_WORD}":./]#{CC_ALL}*?)>>|xref:([#{CC_WORD}":./]#{CC_ALL}*?)\[(#{CC_ALL}*?[^\\])?\]))m
+  def sub_inline_xrefs_for_chunked_output(text, converter)
+#  puts text
+#    binding.pry
+    text = text.gsub(XrefInlineMacroChunkedRx) do
+      # alias match for Ruby 1.8.7 compat
+      m = $~
+#           binding.pry
+           # honor the escape
+           if m[0].start_with? RS
+             next m[0][1..-1]
+           end
+      if m[1]
+        id, reftext = m[1].split(',', 2).map {|it| it.strip }
+        id = id[1, id.length - 2] if (id.start_with? '"') && (id.end_with? '"')
+        reftext = reftext[1, reftext.length - 2] if reftext && (reftext.start_with? '"') && (reftext.end_with? '"')
+      else
+        id, reftext = m[2], m[3]
+        reftext = reftext.gsub ESC_R_SB, R_SB if reftext && (reftext.include? R_SB)
+      end
+
+#      binding.pry
+      if contains_path? id
+          # QUESTION should we limit split to 2 segments?
+          path, fragment = id.split('#')
+        # QUESTION perform this check and throw it back if it fails?
+        #elsif (start_chr = id.chr) == '.' || start_chr == '/'
+        #  next m[0][1..-1]
+        else
+          path, fragment = nil, id
+      end
+              # handles forms: doc#, doc.adoc#, doc#id and doc.adoc#id
+      #            binding.pry
+        if path
+#          binding.pry
+          path = Asciidoctor::Helpers.rootname(path)
+          # the referenced path is this document, or its contents has been included in this document
+          if @document.attributes['docname'] == path || @document.references[:includes].include?(path)
+            refid = fragment
+            path = nil
+            target = %(##{fragment})
+          else
+            # TODO(FAP): check if path belongs to chunk and resolve refid accordingly
+           # binding.pry
+            if (ref = @document.references[:refs][path]) && top_level_section?(ref)
+              refid = path
+            else
+            refid = fragment ? %(#{path}##{fragment}) : path
+            end
+            path = %(#{@document.attributes['relfileprefix']}#{path}#{@document.attributes.fetch 'outfilesuffix', '.html'})
+            target = fragment ? %(#{path}##{fragment}) : path
+          end
+        # handles form: id or Section Title
+        else
+          # resolve fragment as reftext if cannot be resolved as refid and looks like reftext
+          if !(@document.references[:ids].key? fragment) &&
+              ((fragment.include? ' ') || fragment.downcase != fragment) &&
+              (resolved_id = ::RUBY_MIN_VERSION_1_9 ? (@document.references[:ids].key fragment) : (@document.references[:ids].index fragment))
+            fragment = resolved_id
+          end
+          if ref = @document.references[:refs][fragment]
+#            case ref.node_name
+#            when 'section'
+#              binding.pry
+              origin = top_level_section_for ref
+              target = %(#{origin.id}.html##{fragment})
+#            end
+            # TODO(FAP): check if this is a section or a document after conversion and resolve accordingly
+          else
+            target = %(##{fragment})
+          end
+          refid = fragment
+        end
+        #        path = 'FOOBAR'
+        # TODO(FAP): check if is passing 'self' as parent messing with something
+        # reftext: text that gets displayed
+        # refid: key for :ids to lookup reftext
+        # text = node.text || node.document.references[:ids][refid] || %([#{refid}])
+        # path:
+        # fragment:
+        # target: complete target of reference. eg., 'chapter1.html#sub1'
+        puts("reftext NOT NIL") if reftext
+        converted = converter.convert Asciidoctor::Inline.new(self, :anchor, reftext, :type => :xref, :target => target, :attributes => {'path' => path, 'fragment' => fragment, 'refid' => refid})
+        #Asciidoctor::Inline.new(self, :anchor, reftext, :type => :xref, :target => target, :attributes => {'path' => path, 'fragment' => fragment, 'refid' => refid}).convert
+ #       binding.pry
+        '+++' + converted + '+++'
+    end
+#        binding.pry
+    puts text
+    text
+  end
+
+  private
+
+  def top_level_section_for block
+    while !(top_level_section? block) && block.parent
+      block = block.parent
+    end
+    block
+  end
+
+  def top_level_section? section
+    return false unless section
+    # TODO(FAP): this is probably wrong for doctype 'book'?
+    section.node_name == 'section' && section.level <= 1
+  end
+
+  def contains_path?(id)
+    id.include? '#'
+  end
 end

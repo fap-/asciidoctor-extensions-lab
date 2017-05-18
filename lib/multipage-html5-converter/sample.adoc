@@ -5,8 +5,46 @@ Author Name
 == Chapter 1
 
 Content for chapter 1.
+Have a look at this <<table1>> down there in the subsection.
+
+
+[[sub1]]
+=== Subsection of chapter 1
+foobar.
+This is an inline [[inline, INLINE]] anchor.
+
+
+.A formal table
+[[table1]]
+|===
+
+| Cell in column 1, row 1 | Cell in column 2, row 1
+
+| Cell in column 1, row 2 | Cell in column 2, row 2
+
+| Cell in column 1, row 3 | Cell in column 2, row 3
+
+|===
+
+
+[[subsub]]
+=== Soo sub
+Content.
+
 
 == Chapter 2
 
 Content for chapter 2.
 For more content, see <<_chapter_1#,Chapter 1>>.
+
+Here is a link without a path nor a text: <<sub1>>
+
+Here is a link with a path but without refid: <<sub1#subsub>>
+
+Here is a link with path, id and refid: <<_chapter_1#some-section,This is Chapter 1>>
+
+Here is a link with a path for an existing chunk and no refid (should get resolved): <<_chapter_1#sub1>>
+
+Here is a link to a table: <<table1>>
+
+Here is a link to an inline anchor: <<inline>>
